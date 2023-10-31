@@ -23,16 +23,26 @@ class ViewBookmarksCommand(sublime_plugin.WindowCommand):
                 items.append([prefix+str(row+1), line])
                 self.locations.append((view, region))
         if len(items) > 0:
-            sublime.active_window().show_quick_panel(items, self.go_there, sublime.MONOSPACE_FONT)
+            self.orig_view = sublime.active_window().active_view()
+            self.orig_sel = self.orig_view.sel()
+            sublime.active_window().show_quick_panel(items, self.go_there, sublime.MONOSPACE_FONT, on_highlight=self.peek_there)
         else:
             sublime.active_window().show_quick_panel(["No bookmarks found"], None, sublime.MONOSPACE_FONT)
 
     def go_there(self, i):
-        if i < 0 or i >= len(self.locations):
+        if i >= len(self.locations):
             return
+        elif i < 0:
+            sublime.active_window().focus_view(self.orig_view)
+            self.orig_view.show(self.orig_sel)
+        else:
+            view, region = self.locations[i]
+            sublime.active_window().focus_view(view)
+            view.show_at_center(region)
+            view.sel().clear()
+            view.sel().add(region)
+
+    def peek_there(self, i):
         view, region = self.locations[i]
         sublime.active_window().focus_view(view)
         view.show_at_center(region)
-        view.sel().clear()
-        view.sel().add(region)
-
